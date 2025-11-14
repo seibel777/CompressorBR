@@ -1,159 +1,91 @@
-# 🎧 CompressorBR
+# CompressorBR
 
-**CompressorBR** é uma ferramenta **open source** para comprimir arquivos de **áudio e vídeo diretamente no navegador**, sem enviar nada para servidores.  
-Desenvolvido em **Next.js + TypeScript + ffmpeg.wasm**, o projeto foca em **privacidade, performance e simplicidade**.
+_CompressorBR_ é um compressor de áudio e vídeo 100% no navegador usando `ffmpeg.wasm`, com foco em privacidade, SEO e monetização por anúncios. A versão atual roda em Next.js 14, utiliza Tailwind + shadcn/ui e está pronta para ser implantada em Vercel ou Cloudflare Pages.
 
----
+> English TL;DR: CompressorBR is a browser-only ffmpeg.wasm interface with ready-to-use presets (MP3 128/192, H.264 720p/480p, AAC extraction). It ships with SEO pages, ad placeholders, GA4 hooks and CI built-in.
 
-## 🚀 Recursos principais
+## Demo local
 
-- 🧠 **Processamento local** — Nenhum upload é feito. Todo o trabalho ocorre no seu navegador.  
-- 🎵 **Presets prontos**:
-  - MP3 128 kbps  
-  - MP3 192 kbps  
-  - MP4 720p (H.264, 2 Mbps)  
-  - MP4 480p (H.264, 1 Mbps)  
-  - Extrair áudio de vídeo (AAC 128 kbps)  
-- ⚡ **Baseado em ffmpeg.wasm** — mesmo poder do FFmpeg em WebAssembly.  
-- 📱 **Responsivo** — funciona em celular, tablet e desktop.  
-- 🧩 **PWA** — pode ser instalado como app offline.  
-- 💡 **Open Source (MIT License)** — use, modifique e contribua.  
-- 🧭 **SEO e privacidade** — páginas estáticas, sem cookies de terceiros.  
-
----
-
-## 🏗️ Tecnologias
-
-| Categoria | Ferramenta |
-|------------|-------------|
-| Framework | [Next.js 14](https://nextjs.org/) |
-| Linguagem | TypeScript |
-| UI | Tailwind CSS + shadcn/ui |
-| Processamento | [ffmpeg.wasm](https://github.com/ffmpegwasm/ffmpeg.wasm) |
-| Testes | Vitest + React Testing Library |
-| CI/CD | GitHub Actions |
-| Licença | MIT |
-
----
-
-## 💻 Rodando localmente
-
-### 1️⃣ Clone o repositório
 ```bash
-git clone https://github.com/seu-usuario/compressorbr.git
-cd compressorbr
-
-2️⃣ Instale as dependências
-
 pnpm install
-# ou npm install
-
-3️⃣ Execute em modo desenvolvimento
-
 pnpm dev
-# depois acesse http://localhost:3000
+```
 
+A aplicação sobe em `http://localhost:3000` com PWA, UTM tracking e placeholders de anúncios habilitados.
 
-⸻
+> Prefere `npm`? Use `npm install`, `npm run dev`, `npm run build` etc. O script `postinstall` já executa `node scripts/copy-ffmpeg.mjs` em ambos os casos.
 
-🧠 Como funciona
+> Nota: se o navegador bloquear o download do `ffmpeg-core` por CORS, execute `pnpm ffmpeg:copy` (ou aguarde o `postinstall`) para copiar os artefatos de `node_modules/@ffmpeg/core/dist` para `public/ffmpeg`, e garanta que `NEXT_PUBLIC_FFMPEG_BASE_URL=/ffmpeg/umd/`.
 
-O CompressorBR usa o poder do ffmpeg.wasm para realizar compressões localmente.
-Isso significa:
-	•	Nenhum arquivo é enviado a servidores.
-	•	Todo o processamento acontece no seu dispositivo.
-	•	Maior privacidade e velocidade para arquivos até ~300 MB (dependendo da RAM disponível).
+## Build e produção
 
-Fluxo básico:
-	1.	O usuário arrasta um arquivo.
-	2.	O ffmpeg.wasm roda a compressão no navegador.
-	3.	O arquivo comprimido é disponibilizado para download.
+```bash
+pnpm build && pnpm start
+```
 
-⸻
+O bundle é compatível com Vercel (`pnpm build` no build command e `pnpm start` no server) ou Cloudflare Pages (modo estático + adaptação de Edge). Configure as variáveis `NEXT_PUBLIC_GA_MEASUREMENT_ID`, `NEXT_PUBLIC_HIDE_ADS_FOR_UTM`, `NEXT_PUBLIC_FFMPEG_BASE_URL` (por padrão `/ffmpeg/umd/`) e `NEXT_PUBLIC_ADSENSE_ID` nos ambientes desejados.
 
-📦 Estrutura simplificada
+## Processamento local (privacidade)
 
-src/
- ├─ app/
- │   ├─ page.tsx
- │   ├─ politica-de-privacidade/page.tsx
- │   └─ termos-de-uso/page.tsx
- ├─ components/
- │   ├─ Dropzone.tsx
- │   ├─ PresetSelect.tsx
- │   ├─ ProgressBar.tsx
- │   ├─ ResultCard.tsx
- │   └─ ads/
- │       ├─ AdTop.tsx
- │       └─ AdInArticle.tsx
- ├─ lib/
- │   ├─ ffmpegClient.ts
- │   ├─ analytics.ts
- │   └─ utils.ts
-public/
- ├─ manifest.json
- └─ icons/
+- ffmpeg.wasm é carregado sob demanda e roda inteiramente no browser.
+- Os artefatos `ffmpeg-core.js/.wasm/.worker` são servidos de `/public/ffmpeg`, evitando chamadas externas.
+- Os arquivos nunca saem do dispositivo do usuário; apenas métricas GA4 são enviadas.
+- O service worker cacheia `ffmpeg-core.js/.wasm`, assets próprios e entrega um fallback offline.
 
+Reforce essa mensagem no marketing para alinhar expectativas de privacidade.
 
-⸻
+## Google Analytics 4
 
-📊 GA4 e anúncios (opcional)
-	•	Os anúncios (AdSense/Ezoic) são apenas placeholders.
-Adicione seus blocos em components/ads/*.
-	•	Integração do Google Analytics 4 via GA_MEASUREMENT_ID no .env.
-	•	UTM parameters (utm_source, utm_medium, utm_campaign) são armazenados e enviados aos eventos GA.
+1. Crie um Measurement ID no GA4.
+2. Defina `NEXT_PUBLIC_GA_MEASUREMENT_ID` no `.env` (exemplo em `.env.example`).
+3. Eventos disponíveis: `upload_started`, `preset_selected`, `compression_completed`, `download_clicked`, `error` — todos enviam UTMs persistidos em `localStorage`.
 
-⸻
+## AdSense / Ezoic
 
-📱 Instalação como PWA
-	•	Adicione o app à tela inicial (Android, iOS ou Desktop).
-	•	Funciona offline para compressões já em cache.
-	•	manifest.json e service-worker.js já incluídos.
+Os componentes `src/components/ads/*` possuem comentários indicando onde inserir `adsbygoogle.push({...})`. Há três slots:
 
-⸻
+- `<AdTop />`: topo responsivo.
+- `<AdInArticle />`: entre o upload e o resultado.
+- `<AdAnchorMobile />`: âncora opcional apenas no mobile.
 
-🧩 Roadmap
-	•	✅ v1: Áudio + Vídeo (local, ffmpeg.wasm)
-	•	🚧 v2: Compressão múltipla e fila
-	•	🔜 v3: Modo “Turbo” (processamento servidor Node/FFmpeg)
-	•	🔜 v4: Ferramentas irmãs (Conversor de formato, Normalizador, Cortador)
+Respeite o rótulo “Publicidade” e evite encostar em botões. Para silenciar anúncios em campanhas específicas, use a flag `NEXT_PUBLIC_HIDE_ADS_FOR_UTM`.
 
-⸻
+[Guia rápido de blocos](ADSENSE-GUIDE.md) explica formatos recomendados para cada componente.
 
-🛡️ Política de privacidade
+## Limitações conhecidas (ffmpeg.wasm)
 
-O CompressorBR processa seus arquivos localmente no navegador, sem enviar dados para servidores.
-Anúncios e integrações analíticas respeitam as políticas do Google e não armazenam arquivos do usuário.
+- Arquivos muito grandes podem consumir muita RAM e travar o navegador, embora o app não imponha limites.
+- Navegadores móveis muito antigos podem não suportar WebAssembly threading.
+- A performance depende do hardware do usuário; ofereça mensagens de tempo estimado e feedbacks claros.
 
-⸻
+## Roadmap sugerido
 
-🤝 Contribuindo
+- **v2**: múltiplos arquivos/filas com visualização em lote.
+- **v3**: fallback Node.js/serverless para mídias gigantes (ex.: > 1 GB).
+- **v4**: ferramentas irmãs (ex.: CompressorBR Photos, CompressorBR GIF) compartilhando o mesmo design system.
 
-Contribuições são bem-vindas!
-	1.	Faça um fork do repositório.
-	2.	Crie sua branch (git checkout -b feature/nova-funcionalidade).
-	3.	Commit (git commit -m 'Adiciona nova feature').
-	4.	Push (git push origin feature/nova-funcionalidade).
-	5.	Abra um Pull Request.
+## Contribuição
 
-⸻
+1. Crie uma branch seguindo `tipo/descricao-curta` (ex.: `feature/multi-upload`).
+2. Abra um PR descrevendo:
+   - Contexto do problema.
+   - Prints ou passos de teste.
+   - Checklist de lint/test/build.
+3. Todo PR roda `pnpm lint`, `pnpm test` e `pnpm build` via GitHub Actions.
 
-📄 Licença
+Issues e discussões são bem-vindas; mantenha o respeito pelo código aberto.
 
-Este projeto é licenciado sob a MIT License — veja o arquivo LICENSE para mais detalhes.
+## Como ativar SEO/PWA
 
-⸻
+- Metadados por página (`generateMetadata`/`metadata`) já configurados.
+- Rotas estáticas PT-BR e /en espelhadas para SEO internacional.
+- `public/manifest.json`, `public/sw.js` e ícones 192/512 prontos para Lighthouse PWA.
 
-🌐 Links úteis
-	•	Site oficial: https://compressorbr.com
-	•	Autor: João Pedro Seibel
-	•	GitHub: github.com/seibel777/compressorbr
+## Implantação
 
-⸻
+- **Vercel**: importe o repositório, defina as variáveis de ambiente e mantenha o build command `pnpm build`.
+- **Cloudflare Pages**: utilize `npm run build` (ou `pnpm build`) e sirva a pasta `.next` via middleware/adapter oficial.
 
-💬 Frase de destaque
+## MIT License
 
-“Comprimir seus arquivos nunca foi tão fácil, nem tão privado.” 🔒
-Feito com ♥ no Brasil.
-
----
+Distribuído sob a Licença MIT — veja `LICENSE`. Credite “CompressorBR (Open Source)” ao reutilizar.
